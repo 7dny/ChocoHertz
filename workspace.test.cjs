@@ -1,0 +1,9 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+let current={version:1,state:{frequency:440},macros:[],layout:{}},stored=new Map(),listeners={},pending=[],buttons={undo:{},redo:{}};
+const target={closest:selector=>selector.startsWith('#undo')?null:true};
+class Element{}Object.setPrototypeOf(target,Element.prototype);
+const env={Element,JSON,console,studio:{snapshot:()=>structuredClone(current),loadRecipe:item=>{current=structuredClone(item.snapshot)}},ChocoRecipes:{clean:s=>structuredClone(s)},studioBase:{},specs:[],structuredClone,$:id=>buttons[id],notify:()=>{},localStorage:{getItem:k=>stored.get(k),setItem:(k,v)=>stored.set(k,v)},document:{addEventListener:(name,fn)=>{(listeners[name]??=[]).push(fn)}},window:{addEventListener:()=>{}},setInterval:()=>{},setTimeout:fn=>{pending.push(fn);return pending.length},clearTimeout:()=>{}};
+vm.createContext(env);const source=fs.readFileSync(path.join(__dirname,'../workspace.js'),'utf8');vm.runInContext(source,env);
+const gesture=(value)=>{listeners.pointerdown[0]({target});current.state.frequency=value;listeners.pointerup[0]();pending.splice(0).forEach(fn=>fn());};
+gesture(528);assert.equal(buttons.undo.disabled,false);buttons.undo.onclick();assert.equal(current.state.frequency,440);buttons.redo.onclick();assert.equal(current.state.frequency,528);buttons.undo.onclick();gesture(660);assert.equal(buttons.redo.disabled,true);assert.equal(JSON.parse(stored.get('chocohertz-workspace-v1')).current.state.frequency,660);
+current.state.frequency=20;vm.runInContext(source,env);assert.equal(current.state.frequency,660);buttons.undo.onclick();assert.equal(current.state.frequency,440);console.log('PASS: grouped edits, undo, redo, redo invalidation, persistent workspace and persistent history.');

@@ -1,0 +1,4 @@
+const assert=require('node:assert/strict'),fs=require('fs'),vm=require('vm'),path=require('path');const e={window:{},structuredClone};e.window=e;vm.createContext(e);for(const f of ['extras-config.js','recipe-data.js','music-config.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../'+f),'utf8'),e);const m=e.ChocoMusic;
+const s={open:{scale:true},scale:{enabled:true,root:0,type:'major'}};assert.equal(m.snap(440,s),440);assert.equal(m.snap(480,s),493.88);s.open.scale=false;assert.equal(m.snap(466.16,s),466.16);s.open.scale=true;for(let hz=20;hz<=20000;hz*=1.2){const out=m.snap(hz,s);assert(out>=20&&out<=20000);const note=Math.round(69+12*Math.log2(out/440));assert(m.scales.major.includes((note%12+12)%12));}
+assert.deepEqual(Array.from(m.intervals.minor),[0,3,7]);assert.equal(m.defaults.arp.running,false);assert.equal(m.defaults.metro.running,false);console.log('PASS: scale bypass, nearest allowed pitches, frequency bounds, and silent instrument defaults.');
+
